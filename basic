@@ -1,0 +1,29 @@
+table inet firewalld {
+    # ... Existing chains and rules ...
+
+    chain filter_INPUT {
+        type filter hook input priority filter + 10; policy drop;
+        ct state { established, related } accept
+        ct status dnat accept
+        iifname "lo" accept
+        ct state invalid drop
+        # ... Other rules ...
+        accept # Allow guest to receive DNS replies
+    }
+
+    chain filter_OUTPUT {
+        type filter hook output priority filter + 10; policy drop;
+        ct state { established, related } accept
+        oifname "lo" accept
+        ip daddr 224.0.0.251 udp dport 5353 accept
+        ip6 daddr ff02::fb udp dport 5353 accept
+        udp dport 1025-65535 accept
+        tcp dport 1025-65535 accept
+        # Allow the guest to send DNS queries, HTTP, and HTTPS
+        ip daddr 8.8.8.8 tcp dport { 53, 80, 443 } accept
+        ip6 daddr 2001:4860:4860::8888 tcp dport { 53, 80, 443 } accept
+        # ... Other rules ...
+    }
+
+    # ... Other chains ...
+}
